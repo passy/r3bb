@@ -45,7 +45,7 @@
         function log() {
             if (window.console !== undefined && $.isFunction(console.log) &&
                 settings.debug) {
-                console.log.apply(console.log, arguments);
+                console.log.apply(console, arguments);
             }
         }
 
