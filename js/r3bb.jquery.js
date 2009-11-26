@@ -145,7 +145,7 @@
     };
 
     $.fn.html2bb = function () {
-        // Borrowed from 'wysiwyg-bbcode'. Seems to be quite comprahensive.
+        // Borrowed from 'wysiwyg-bbcode'. Seems to be quite comprehensive.
         return $(this).each(function () {
             var content = $(this).val(), a, sc2;
             function rep(regex, replacement) {
