@@ -1,13 +1,14 @@
 /**
  * r3bb
  * ~~~~
- * 
+ *
  * jQuery plugin that provides a tiny (not tiny in the sense of tinyMCE, but
  * really tiny) WYSIWYG-Editor that outputs BB-Code instead of HTML. This way
  * it's much easier to display this without worrying about correct escaping.
  *
- * :copyright: date, Pascal Hartig <phartig@rdrei.net>
- * :license: GPL v3, see doc/LICENSE for more details.
+ * :copyright: 2009, Pascal Hartig <phartig@rdrei.net>
+ * :license: Dual licensed under the MIT and GPL licenses.
+ * _``http://docs.jquery.com/License``
  */
 
 /*global jQuery, window */
@@ -15,12 +16,20 @@
 "use strict";
 
 (function ($) {
+    /**
+     * Use it on any textarea like
+     * $("textarea:first").r3bb()
+     * to replace it with a small WYSIWYG editor.
+     *
+     * @param options['debug']: Boolean, turn debug mode on or off.
+     * @param options['copy_value']: Boolean. Copy existing content from text area to
+     * RTE.
+     * @param options['stylesheet']: Stylesheet URL to include in editor.
+     */
     $.fn.r3bb = function (options) {
         var settings = {
-            debug: true,
-            // Copy HTML content from textarea to RTE
+            debug: false,
             copy_value: true,
-            // Stylesheet url to include in iframe.
             stylesheet: null
         },
             markup = ['<div class="r3bb">',
@@ -56,6 +65,13 @@
                 var btn_type = $(this).attr('class').split('btn-')[1];
                 log("Button of type %o clicked.", btn_type);
 
+                // Note that $this is not the button, but the textarea.
+                $this.trigger('r3bb-button-clicked', {
+                    type: 'click',
+                    btn_type: btn_type,
+                    editor: editor
+                });
+
                 switch (btn_type) {
                 case 'bold':
                     editor.execCommand('bold', false, null);
@@ -87,13 +103,25 @@
 
             // Waiting for iframe to load
             $rte.load(function () {
+                var $body;
+
                 log("IFrame loaded. Turning on design mode.");
                 editor = $rte.contents()[0];
-                $rte.contents()[0].designMode = 'on';
+                editor.designMode = 'on';
+                $body = $(editor).find('body').addClass("r3bb-content");
+
                 // Copy in old text area html
                 if (settings.copy_value) {
                     log("Copying HTML from textarea.");
-                    $(editor).find("body").html($this.html());
+                    $body.html($this.html());
+                }
+
+                if (settings.stylesheet) {
+                    log("Inserting stylesheet.");
+                    $(editor).find("head").append(
+                        $('<link rel="stylesheet" type="text/css" media="screen" />').
+                            attr('href', settings.stylesheet)
+                    );
                 }
             });
 

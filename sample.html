@@ -19,12 +19,17 @@
     <script type="text/javascript" charset="utf-8" src="js/jquery-1.3.2.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/r3bb.jquery.js"></script>
     <script type="text/javascript" charset="utf-8">
+        //<![CDATA[
         $(function () {
-            $("#r3bbme").r3bb();
-            $("textarea").bind('r3bb-submit', function (event) {
+            $("#r3bbme").r3bb({
+                debug: true,
+                stylesheet: 'style/stylesheets/screen.css'
+            });
+            $("textarea").bind('r3bb-submit', function () {
                 alert("Generated BBCode: "+$("#r3bbme").val());
             });
         });
+        //]]>
     </script>
 </body>
 </html>
