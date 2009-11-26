@@ -88,21 +88,7 @@
                 return false;
             }
 
-            // Hide the original textarea.
-            $this.hide();
-
-            // Insert the r3bb markup instead.
-            $r3bb = $(markup).insertBefore($this);
-
-            // And insert a freshly created iframe inside.
-            $rte = $("<iframe class=\"r3bbif\" />").css({
-                // Copy text area's original dimensions
-                width: twidth,
-                height: theight
-            }).appendTo($r3bb);
-
-            // Waiting for iframe to load
-            $rte.load(function () {
+            function on_iframe_loaded() {
                 var $body;
 
                 log("IFrame loaded. Turning on design mode.");
@@ -123,7 +109,26 @@
                             attr('href', settings.stylesheet)
                     );
                 }
-            });
+            }
+
+            // Hide the original textarea.
+            $this.hide();
+
+            // Insert the r3bb markup instead.
+            $r3bb = $(markup).insertBefore($this);
+
+            // And insert a freshly created iframe inside.
+            $rte = $("<iframe class=\"r3bbif\" />").css({
+                // Copy text area's original dimensions
+                width: twidth,
+                height: theight
+            }).appendTo($r3bb);
+
+            // Waiting for iframe to load
+
+            // WebKit relies on the ready event, gecko on the load event.
+            // Let's hope multiple initializations won't do any harm.
+            $rte.load(on_iframe_loaded).contents().eq(0).ready(on_iframe_loaded);
 
             // Init toolbar buttons
             $r3bb.find("nav button").click(on_button_clicked);
