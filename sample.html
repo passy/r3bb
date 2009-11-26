@@ -13,13 +13,17 @@
 <body>
     <h1>R3BB Test page</h1>
     <form action="#" method="post">
-        <textarea name="myarea" rows="8" cols="40" id="r3bbme"></textarea>
+        <textarea name="myarea" rows="8" cols="40" id="r3bbme">Hello World!</textarea>
+        <p><input type="submit" name="clickme" value="Submit" /></p>
     </form>
     <script type="text/javascript" charset="utf-8" src="js/jquery-1.3.2.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/r3bb.jquery.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(function () {
             $("#r3bbme").r3bb();
+            $("textarea").bind('r3bb-submit', function (event) {
+                alert("Generated BBCode: "+$("#r3bbme").val());
+            });
         });
     </script>
 </body>

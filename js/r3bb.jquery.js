@@ -17,9 +17,17 @@
 (function ($) {
     $.fn.r3bb = function (options) {
         var settings = {
-            debug: true
+            debug: true,
+            // Copy HTML content from textarea to RTE
+            copy_value: true,
+            // Stylesheet url to include in iframe.
+            stylesheet: null
         },
-            markup = '<div class="r3bb"><nav><button class="btn-bold">B</button><button class="btn-italic">I</button><button class="btn-underline">U</button></nav></div>';
+            markup = ['<div class="r3bb">',
+                     '<nav><button class="btn-bold">B</button>',
+                     '<button class="btn-italic">I</button>',
+                     '<button class="btn-underline">',
+                     'U</button></nav></div>'].join("\n");
 
         $.extend(settings, options);
 
@@ -45,16 +53,23 @@
 
             function on_button_clicked() {
                 // Detect button type on class name.
-                var btn_type = $(this).attr('class').split('btn_')[1];
+                var btn_type = $(this).attr('class').split('btn-')[1];
+                log("Button of type %o clicked.", btn_type);
 
                 switch (btn_type) {
                 case 'bold':
-                    editor.execCommand('bold');
+                    editor.execCommand('bold', false, null);
+                    break;
+                case 'italic':
+                    editor.execCommand('italic', false, null);
+                    break;
+                case 'underline':
+                    editor.execCommand('underline', false, null);
                     break;
                 default:
-                    throw {message: "Unknown button pressed!"};
+                    log("Unknown button type %o pressed!", btn_type);
                 }
-                
+                return false;
             }
 
             // Hide the original textarea.
@@ -71,13 +86,113 @@
             }).appendTo($r3bb);
 
             // Waiting for iframe to load
-            window.editor = editor = $rte.get(0).contentWindow.document;
-            window.setTimeout(function () {
+            $rte.load(function () {
+                log("IFrame loaded. Turning on design mode.");
+                editor = $rte.contents()[0];
+                $rte.contents()[0].designMode = 'on';
+                // Copy in old text area html
+                if (settings.copy_value) {
+                    log("Copying HTML from textarea.");
+                    $(editor).find("body").html($this.html());
+                }
+            });
 
-                log("RTE loaded. Enabling design mode for ", editor);
-                editor.designMode = 'on';
-                $(editor).find("body").html("Hello World!");
-            }, 500);
+            // Init toolbar buttons
+            $r3bb.find("nav button").click(on_button_clicked);
+
+            // Hook submit event, paste iframe content into textarea and convert
+            // it from HTML to BBCode
+            $this.parents('form:first').submit(function () {
+                log("Submit caught. Creating BBCode.");
+                $this.val($(editor).find("body").html())
+                    .html2bb()
+                    .trigger('r3bb-submit');
+            });
+        });
+    };
+
+    $.fn.html2bb = function () {
+        // Borrowed from 'wysiwyg-bbcode'. Seems to be quite comprahensive.
+        return $(this).each(function () {
+            var content = $(this).val(), a, sc2;
+            function rep(regex, replacement) {
+                content = content.replace(regex, replacement);
+            }
+            rep(/<img\s[^<>]*?src=\"?([^<>]*?)\"?(\s[^<>]*)?\/?>/gi, "[img]$1[/img]");
+            rep(/<\/(strong|b)>/gi, "[/b]");
+            rep(/<(strong|b)(\s[^<>]*)?>/gi, "[b]");
+            rep(/<\/(em|i)>/gi, "[/i]");
+            rep(/<(em|i)(\s[^<>]*)?>/gi, "[i]");
+            rep(/<\/u>/gi, "[/u]");
+            rep(/\n/gi, "");
+            rep(/\r/gi, "");
+            rep(/<u(\s[^<>]*)?>/gi, "[u]");
+            rep(/<br(\s[^<>]*)?>/gi, "\n");
+            rep(/<p(\s[^<>]*)?>/gi, "");
+            rep(/<\/p>/gi, "\n");
+            rep(/<ul>/gi, "[ul]");
+            rep(/<\/ul>/gi, "[/ul]");
+            rep(/<li>/gi, "[li]");
+            rep(/<\/li>/gi, "[/li]");
+            rep(/<div([^<>]*)>/gi, "\n<span$1>");
+            rep(/<\/div>/gi, "</span>\n");
+            rep(/&nbsp;/gi, " ");
+            rep(/&quot;/gi, "\"");
+            rep(/&amp;/gi, "&");
+            do {
+                a = content;
+                rep(/<font\s[^<>]*?color=\"?([^<>]*?)\"?(\s[^<>]*)?>([^<>]*?)<\/font>/gi, "[color=$1]$3[/color]");
+                if (a === content) {
+                    rep(/<font[^<>]*>([^<>]*?)<\/font>/gi, "$1");
+                }
+                rep(/<a\s[^<>]*?href=\"?([^<>]*?)\"?(\s[^<>]*)?>([^<>]*?)<\/a>/gi, "[url=$1]$3[/url]");
+                sc2 = content;
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?font-weight: ?bold;?\"?\s*([^<]*?)<\/\1>/gi, "[b]<$1 style=$2</$1>[/b]");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?font-weight: ?normal;?\"?\s*([^<]*?)<\/\1>/gi, "<$1 style=$2</$1>");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?font-style: ?italic;?\"?\s*([^<]*?)<\/\1>/gi, "[i]<$1 style=$2</$1>[/i]");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?font-style: ?normal;?\"?\s*([^<]*?)<\/\1>/gi, "<$1 style=$2</$1>");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?text-decoration: ?underline;?\"?\s*([^<]*?)<\/\1>/gi, "[u]<$1 style=$2</$1>[/u]");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?text-decoration: ?none;?\"?\s*([^<]*?)<\/\1>/gi, "<$1 style=$2</$1>");
+                rep(/<(span|blockquote|pre)\s[^<>]*?style=\"?color: ?([^<>]*?);\"?\s*([^<]*?)<\/\1>/gi, "[color=$2]<$1 style=$3</$1>[/color]");
+                rep(/<(blockquote|pre)\s[^<>]*?style=\"?\"? (class=|id=)([^<>]*)>([^<>]*?)<\/\1>/gi, "<$1 $2$3>$4</$1>");
+                rep(/<span\s[^<>]*?style=\"?\"?>([^<>]*?)<\/span>/gi, "$1");
+                if (sc2 === content) {
+                    rep(/<span[^<>]*>([^<>]*?)<\/span>/gi, "$1");
+                    sc2 = content;
+                    rep(/<pre\s[^<>]*?class=\"?code\"?[^<>]*?>([^<>]*?)<\/pre>/gi, "[code]$1[/code]");
+                    if (sc2 === content) {
+                        rep(/<blockquote\s[^<>]*?class=\"?memberquote\"?[^<>]*?id=\"?([^<>\"]*)\"?>([^<>]*?)<\/blockquote>/gi, "[quote$1]$2[/quote]");
+                        if (sc2 === content) {
+                            rep(/<blockquote\s[^<>]*?id=\"?([^<>\"]*?)\"? class=\"?memberquote\"?[^<>]*?>([^<>]*?)<\/blockquote>/gi, "[quote$1]$2[/quote]");
+                            if (sc2 === content) {
+                                rep(/<blockquote\s[^<>]*?class=\"?memberquote\"?[^<>]*?>([^<>]*?)<\/blockquote>/gi, "[quote]$1[/quote]");
+                            }
+                        }
+                    }
+                }
+            } while (a !== content);
+            rep(/<[^<>]*>/gi, "");
+            rep(/&lt;/gi, "<");
+            rep(/&gt;/gi, ">");
+            do {
+                a = content;
+                rep(/\[(b|i|u)\]\[quote([^\]]*)\]([\s\S]*?)\[\/quote\]\[\/\1\]/gi, "[quote$2][$1]$3[/$1][/quote]");
+                rep(/\[color=([^\]]*)\]\[quote([^\]]*)\]([\s\S]*?)\[\/quote\]\[\/color\]/gi, "[quote$2][color=$1]$3[/color][/quote]");
+                rep(/\[(b|i|u)\]\[code\]([\s\S]*?)\[\/code\]\[\/\1\]/gi, "[code][$1]$2[/$1][/code]");
+                rep(/\[color=([^\]]*)\]\[code\]([\s\S]*?)\[\/code\]\[\/color\]/gi, "[code][color=$1]$2[/color][/code]");
+            } while (a !== content);
+            do {
+                a = content;
+                rep(/\[b\]\[\/b\]/gi, "");
+                rep(/\[i\]\[\/i\]/gi, "");
+                rep(/\[u\]\[\/u\]/gi, "");
+                rep(/\[quote[^\]]*\]\[\/quote\]/gi, "");
+                rep(/\[code\]\[\/code\]/gi, "");
+                rep(/\[url=([^\]]+)\]\[\/url\]/gi, "");
+                rep(/\[img\]\[\/img\]/gi, "");
+                rep(/\[color=([^\]]*)\]\[\/color\]/gi, "");
+            } while (a !== content);
+            $(this).val(content);
         });
     };
 }(jQuery));
