@@ -1,0 +1,50 @@
+/*
+  Welcome to Compass.
+  In this file you should write your main styles. (or centralize your imports)
+  Import this file using the following HTML or equivalent:
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" />
+
+@import compass/reset.sass
+
+/*
+  The *:focus rule is reset and suppresses link outlining.
+  You _must_ remember to redefine your own outline, as it’s an important accessibility aid. E.g.
+  *:focus
+    outline: #ccc dotted medium
+
+body
+  :margin 2em
+  :font
+    :size 100%
+    :family Verdana, Helvetica, Arial, sans-serif
+
+h1
+  :font
+    :size 150%
+    :weight bold
+  :margin
+    :bottom 2em
+
+.r3bb
+  :width 500px
+  :border 1px solid #333
+  nav
+    :width 100%
+    :display block
+    :background= "transparent" image_url("editbar_bg.gif") "scroll" "repeat-x"
+
+    button
+      :border none
+      :background transparent
+      :cursor pointer
+
+      &:hover
+        :background gray
+    .btn-bold
+      :font-weight bold
+    .btn-italic
+      :font-style italic
+    .btn-unterline
+      :text-decoration underline
+
+//  vim: set ts=8 sw=2 tw=0 ft=sass: 
