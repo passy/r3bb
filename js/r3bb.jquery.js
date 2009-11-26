@@ -40,7 +40,7 @@
 
         $.extend(settings, options);
 
-        // This allows us to 'unobstrusively' debug everything regardless of
+        // This allows us to 'unobtrusively' debug everything regardless of
         // whether firebug or webkit developer kit is available.
         function log() {
             if (window.console !== undefined && $.isFunction(console.log) &&
