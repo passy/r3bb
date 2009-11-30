@@ -24,19 +24,24 @@
      * @param options['debug']: Boolean, turn debug mode on or off.
      * @param options['copy_value']: Boolean. Copy existing content from text area to
      * RTE.
+     * @param options['copy_dimensions']: Toogles whether to copy the original
+     * textarea's width and height or not.
      * @param options['stylesheet']: Stylesheet URL to include in editor.
      */
     $.fn.r3bb = function (options) {
         var settings = {
             debug: false,
             copy_value: true,
+            copy_dimensions: true,
             stylesheet: null
         },
             markup = ['<div class="r3bb">',
                      '<nav><button class="btn-bold">B</button>',
                      '<button class="btn-italic">I</button>',
-                     '<button class="btn-underline">',
-                     'U</button></nav></div>'].join("\n");
+                     '<button class="btn-underline">U</button>',
+                     '<button class="btn-link">Link</button>',
+                     '<button class="btn-list">List</button>',
+                     '</nav></div>'].join("\n");
 
         $.extend(settings, options);
 
@@ -62,7 +67,8 @@
 
             function on_button_clicked() {
                 // Detect button type on class name.
-                var btn_type = $(this).attr('class').split('btn-')[1];
+                var btn_type = $(this).attr('class').split('btn-')[1],
+                    arg = null;
                 log("Button of type %o clicked.", btn_type);
 
                 // Note that $this is not the button, but the textarea.
@@ -82,6 +88,15 @@
                 case 'underline':
                     editor.execCommand('underline', false, null);
                     break;
+                case 'link':
+                    arg = window.prompt("URL:");
+                    if(arg) {
+                        editor.execCommand('createLink', false, arg);
+                    }
+                    break;
+                case 'list':
+                    editor.execCommand('insertUnorderedList', false, null);
+                    break;
                 default:
                     log("Unknown button type %o pressed!", btn_type);
                 }
@@ -99,7 +114,7 @@
                 // Copy in old text area html
                 if (settings.copy_value) {
                     log("Copying HTML from textarea.");
-                    $body.html($this.html());
+                    $body.html($this.val());
                 }
 
                 if (settings.stylesheet) {
@@ -118,11 +133,15 @@
             $r3bb = $(markup).insertBefore($this);
 
             // And insert a freshly created iframe inside.
-            $rte = $("<iframe class=\"r3bbif\" />").css({
+            $rte = $("<iframe class=\"r3bbif\" />").appendTo($r3bb);
+
+            if(settings.copy_dimensions) {
                 // Copy text area's original dimensions
-                width: twidth,
-                height: theight
-            }).appendTo($r3bb);
+                $rte.css({
+                    width: twidth,
+                    height: theight
+                });
+            }
 
             // Waiting for iframe to load
 
