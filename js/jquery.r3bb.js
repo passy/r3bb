@@ -30,6 +30,8 @@
      * @param options['button']: A dictionary with the available actions in the
      * created navigation bar. Key is the name of the button like 'bold', value
      * is the button text. You can style this via the class 'btn-%(key)s'.
+     * @param options['markup_begin']: Start markup of the button bar.
+     * @param options['markup_end']: End markup of the button bar.
      */
     $.fn.r3bb = function (options) {
         var settings = {
@@ -43,10 +45,10 @@
                 'underline': 'U',
                 'link': 'Link',
                 'list': 'List'
-            }
+            },
+            markup_begin: '<div class="r3bb"><nav>',
+            markup_end: '</nav></div>'
         },
-            markup_begin = '<div class="r3bb"><nav>',
-            markup_end = '</nav></div>',
             markup_buttons = [],
             markup = '';
 
@@ -58,7 +60,9 @@
         });
 
         // Make a string out of our markup list.
-        markup = [].concat(markup_begin, markup_buttons, markup_end).join('\n');
+        markup = [].concat(settings.markup_begin,
+                           markup_buttons,
+                           settings.markup_end).join('\n');
 
         // Cross-Browser on demand logging that even works with webkit and its
         // shitty implementation.
