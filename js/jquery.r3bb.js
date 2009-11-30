@@ -27,30 +27,45 @@
      * @param options['copy_dimensions']: Toogles whether to copy the original
      * textarea's width and height or not.
      * @param options['stylesheet']: Stylesheet URL to include in editor.
+     * @param options['button']: A dictionary with the available actions in the
+     * created navigation bar. Key is the name of the button like 'bold', value
+     * is the button text. You can style this via the class 'btn-%(key)s'.
      */
     $.fn.r3bb = function (options) {
         var settings = {
             debug: false,
             copy_value: true,
             copy_dimensions: true,
-            stylesheet: null
+            stylesheet: null,
+            buttons: {
+                'bold': 'B',
+                'italic': 'I',
+                'underline': 'U',
+                'link': 'Link',
+                'list': 'List'
+            }
         },
-            markup = ['<div class="r3bb">',
-                     '<nav><button class="btn-bold">B</button>',
-                     '<button class="btn-italic">I</button>',
-                     '<button class="btn-underline">U</button>',
-                     '<button class="btn-link">Link</button>',
-                     '<button class="btn-list">List</button>',
-                     '</nav></div>'].join("\n");
+            markup_begin = '<div class="r3bb"><nav>',
+            markup_end = '</nav></div>',
+            markup_buttons = [],
+            markup = '';
 
         $.extend(settings, options);
 
-        // This allows us to 'unobtrusively' debug everything regardless of
-        // whether firebug or webkit developer kit is available.
+        // Generate the button markup
+        $.each(settings.buttons, function (key, value) {
+            markup_buttons.push(['<button class="btn-', key, '">', value, '</button>'].join(''));
+        });
+
+        // Make a string out of our markup list.
+        markup = [].concat(markup_begin, markup_buttons, markup_end).join('\n');
+
+        // Cross-Browser on demand logging that even works with webkit and its
+        // shitty implementation.
         function log() {
-            if (window.console !== undefined && $.isFunction(console.log) &&
+            if (window.console !== undefined && $.isFunction(window.console.log) &&
                 settings.debug) {
-                console.log.apply(console, arguments);
+                window.console.log.apply(window.console, arguments);
             }
         }
 
